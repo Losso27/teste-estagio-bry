@@ -14,6 +14,7 @@ import java.io.*;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -41,9 +42,6 @@ public class Main {
 
         //Upload do certificado
         Certificate cert = ks.getCertificate("f22c0321-1a9a-4877-9295-73092bb9aa94");
-        List<Certificate> certList = new ArrayList<>();
-        certList.add(cert);
-        Store certs = new JcaCertStore(certList);
 
         //Verificação da assinatura
         CMSSignedData cmsSignedData = new CMSSignedData(ContentInfo.getInstance(signedData));
@@ -51,11 +49,7 @@ public class Main {
         SignerInformationStore signers = cmsSignedData.getSignerInfos();
         SignerInformation signer = signers.getSigners().iterator().next();
 
-        //Acha a intersecção com os assinatario do certificado
-        Collection<X509CertificateHolder> certCollection = certs.getMatches(signer.getSID());
-        X509CertificateHolder certificateHolder = certCollection.iterator().next();
-
         //Imprime true caso o documento foi assinado pelo o dono do certificado e falso caso contrário
-        System.out.println(signer.verify(new JcaSimpleSignerInfoVerifierBuilder().build(certificateHolder)));
+        System.out.println(signer.verify(new JcaSimpleSignerInfoVerifierBuilder().build(cert.getPublicKey())));
     }
 }
