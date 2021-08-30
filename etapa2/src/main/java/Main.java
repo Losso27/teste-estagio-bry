@@ -29,7 +29,6 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) throws KeyStoreException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException, OperatorCreationException, CMSException {
 
-        //Upload dos arquivos
         KeyStore ks = KeyStore.getInstance("pkcs12");
         char[] password = "123456789".toCharArray();
         File file = new File("./src/main/resources/doc.txt");
@@ -42,6 +41,7 @@ public class Main {
             ks.load(new FileInputStream("./src/main/resources/pkcs12/DesafioEstagioJava.p12"), password);
         } catch (IOException e)  {
             System.out.println("Erro ao ler os arquivos");
+            System.exit(0);
         }
         //Upload da chave e do certificado
         Certificate cert = ks.getCertificate("f22c0321-1a9a-4877-9295-73092bb9aa94");

@@ -22,20 +22,27 @@ import java.util.Collection;
 import java.util.List;
 
 public class Main {
-    public static void main(String[] args) throws IOException, CMSException, KeyStoreException, CertificateException, NoSuchAlgorithmException, OperatorCreationException {
+    public static void main(String[] args) throws CMSException, KeyStoreException, CertificateException, NoSuchAlgorithmException, OperatorCreationException {
 
         KeyStore ks = KeyStore.getInstance("pkcs12");
         char[] password = "123456789".toCharArray();
+        byte[] signedData = null;
+
+        try {
         ks.load(new FileInputStream("./src/main/resources/pkcs12/DesafioEstagioJava.p12"), password);
+        File file = new File("./src/main/resources/signed-doc.p7s");
+        FileInputStream stream = new FileInputStream(file);
+        signedData = stream.readAllBytes();
+        } catch (IOException e)  {
+            System.out.println("Erro ao ler os arquivos");
+            System.exit(0);
+        }
 
         Certificate cert = ks.getCertificate("f22c0321-1a9a-4877-9295-73092bb9aa94");
         List<Certificate> certList = new ArrayList<>();
         certList.add(cert);
         Store certs = new JcaCertStore(certList);
 
-        File file = new File("./src/main/resources/signed-doc.p7s");
-        FileInputStream stream = new FileInputStream(file);
-        byte[] signedData = stream.readAllBytes();
 
         CMSSignedData cmsSignedData = new CMSSignedData(ContentInfo.getInstance(signedData));
 
@@ -45,7 +52,5 @@ public class Main {
         X509CertificateHolder certificateHolder = certCollection.iterator().next();
 
         System.out.println(signer.verify(new JcaSimpleSignerInfoVerifierBuilder().build(certificateHolder)));
-
-
     }
 }
