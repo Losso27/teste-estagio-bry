@@ -27,29 +27,42 @@ import java.util.Collections;
 import java.util.List;
 
 public class Main {
-    public static void main(String[] args) throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException, OperatorCreationException, CMSException {
+    public static void main(String[] args) throws KeyStoreException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException, OperatorCreationException, CMSException {
 
+        //Upload dos arquivos
         KeyStore ks = KeyStore.getInstance("pkcs12");
         char[] password = "123456789".toCharArray();
         File file = new File("./src/main/resources/doc.txt");
-        FileInputStream stream = new FileInputStream(file);
-        byte[] data = stream.readAllBytes();
-
-        ks.load(new FileInputStream("./src/main/resources/pkcs12/DesafioEstagioJava.p12"), password);
+        FileInputStream stream ;
+        byte[] data = null;
+        //Caso haja algum problema com a leitura de arquivo é impresso um aviso na tela
+        try {
+            stream = new FileInputStream(file);
+            data = stream.readAllBytes();
+            ks.load(new FileInputStream("./src/main/resources/pkcs12/DesafioEstagioJava.p12"), password);
+        } catch (IOException e)  {
+            System.out.println("Erro ao ler os arquivos");
+        }
+        //Upload da chave e do certificado
         Certificate cert = ks.getCertificate("f22c0321-1a9a-4877-9295-73092bb9aa94");
         PrivateKey key = (PrivateKey) ks.getKey("f22c0321-1a9a-4877-9295-73092bb9aa94", password);
 
+        //Configuração das classes para executar a assinatura do arquivo
         CMSSignedDataGenerator cmsGenerator = new CMSSignedDataGenerator();
-        ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256withRSA").build(key);
         Security.addProvider(new BouncyCastleProvider());
-
+        ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256withRSA").build(key);
         cmsGenerator.addSignerInfoGenerator(
                 new JcaSignerInfoGeneratorBuilder(
                         new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
                         .build(contentSigner, (X509Certificate) cert));
-
+        //Assinatura do arquivo
         CMSSignedData cms = cmsGenerator.generate(new CMSProcessableByteArray(data), true);
+        //Escrita do arquivo de output
         Path output = Paths.get("./src/main/resources/output.p7s");
-        Files.write(output, cms.getEncoded());
+        try {
+            Files.write(output, cms.getEncoded());
+        } catch (IOException e) {
+            System.out.println("Erro ao escrever o arquivo");
+        }
     }
 }
