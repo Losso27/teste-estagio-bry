@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 public class CertificateManager {
+    //Onde os certificados ficarão armazendos
     List<Certificate> certList;
 
     public CertificateManager () {
@@ -35,35 +36,44 @@ public class CertificateManager {
     }
 
     public byte[] sign(byte[] data, byte[] certBytes, char[] password, String alias) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, UnrecoverableKeyException, CMSException, OperatorCreationException {
+        //Setup das chaves e do certificado
         KeyStore ks = KeyStore.getInstance("pkcs12");
         ks.load(new ByteArrayInputStream(certBytes), password);
         PrivateKey key = (PrivateKey) ks.getKey(alias, password);
         Certificate cert = ks.getCertificate(alias);
         certList.add(cert);
 
+        //Setup para a assinatura
         CMSSignedDataGenerator cmsGenerator = new CMSSignedDataGenerator();
         ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256withRSA").build(key);
         Security.addProvider(new BouncyCastleProvider());
-
         cmsGenerator.addSignerInfoGenerator(
                 new JcaSignerInfoGeneratorBuilder(
                         new JcaDigestCalculatorProviderBuilder().setProvider("BC").build())
                         .build(contentSigner, (X509Certificate) cert));
 
+        //Assinatura do arquivo
         CMSSignedData cms = cmsGenerator.generate(new CMSProcessableByteArray(data), true);
         return cms.getEncoded();
     }
 
     public boolean verify(byte[] signedData) throws CertificateException, CMSException, OperatorCreationException {
 
+        //upload dos certificados já usados para assinatura
         Store certs = new JcaCertStore(certList);
+
+        //Setup do arquivo assinado
         CMSSignedData cmsSignedData = new CMSSignedData(ContentInfo.getInstance(signedData));
 
+        //Busca os assinatarios do documento
         SignerInformationStore signers = cmsSignedData.getSignerInfos();
         SignerInformation signer = signers.getSigners().iterator().next();
+
+        //Acha a intersecção com os assinatario do certificado
         Collection<X509CertificateHolder> certCollection = certs.getMatches(signer.getSID());
         X509CertificateHolder certificateHolder;
 
+        //caso não haja nenhum assinatario correspondente retorna falso
         try {
             certificateHolder = certCollection.iterator().next();
         } catch (NoSuchElementException e) {

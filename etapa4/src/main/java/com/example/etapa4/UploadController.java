@@ -15,6 +15,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.Base64;
 
 @RestController
 public class UploadController {
@@ -25,24 +26,28 @@ public class UploadController {
         certificateManager = new CertificateManager();
     }
 
+    //Endpoint para assinatura de um arquivo
     @PostMapping(value = "/sign", consumes = {MediaType.ALL_VALUE})
     public byte[] fileUpload(@RequestPart("alias") String alias,
                              @RequestPart("password") String password,
                              @RequestPart("file") MultipartFile file,
                              @RequestPart("cert") MultipartFile cert) throws IOException, UnrecoverableKeyException, CertificateException, KeyStoreException, NoSuchAlgorithmException, OperatorCreationException, CMSException {
-        return certificateManager.sign(file.getBytes(), cert.getBytes(), password.toCharArray(), alias);
+        //Assina e decodifica em, base64 o arquivo
+        return Base64.getEncoder().encode(certificateManager.sign(file.getBytes(), cert.getBytes(), password.toCharArray(), alias));
     }
 
     @GetMapping(value = "/verify", consumes = {MediaType.ALL_VALUE})
     public String verifyFile(@RequestPart("file") MultipartFile file) {
 
         boolean test;
+        //Se ocorrer alguma exeção por causo dos arquivos inviados retorna INVALIDO
         try {
             test = certificateManager.verify(file.getBytes());
         } catch (CertificateException | OperatorCreationException | CMSException | IOException e) {
             return "INVALIDO";
         }
 
+        //Retorno da validação do arquivo assinado
         if(test){
             return "VALIDO";
         } else {
