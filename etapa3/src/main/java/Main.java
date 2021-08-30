@@ -37,8 +37,6 @@ public class Main {
         FileInputStream stream = new FileInputStream(file);
         byte[] signedData = stream.readAllBytes();
 
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(signedData);
-        ASN1InputStream asn1InputStream = new ASN1InputStream(inputStream);
         CMSSignedData cmsSignedData = new CMSSignedData(ContentInfo.getInstance(signedData));
 
         SignerInformationStore signers = cmsSignedData.getSignerInfos();
